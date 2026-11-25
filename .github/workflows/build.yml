@@ -1,0 +1,45 @@
+name: Build mod
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Estrai lo zip
+        run: |
+          mkdir work
+          unzip -q "$(ls *.zip | head -1)" -d work
+          ls work
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: 8.1.1
+
+      - name: Compila
+        working-directory: work/ironman-mod
+        run: |
+          set -o pipefail
+          gradle build --no-daemon --stacktrace 2>&1 | tee ../../build-log.txt
+
+      - name: Salva il log completo
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-log
+          path: build-log.txt
+
+      - name: Salva il .jar
+        uses: actions/upload-artifact@v4
+        with:
+          name: the-avengers-jar
+          path: work/ironman-mod/build/libs/the-avengers-*.jar
